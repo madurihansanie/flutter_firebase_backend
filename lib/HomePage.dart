@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
+import 'package:flutter_firebase_backend_app/DetailsPage.dart';
 
 
 class Home extends StatefulWidget {
@@ -9,9 +10,14 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  //Top Post
   StreamSubscription<QuerySnapshot>subscription;
+  // For Body Post
+  StreamSubscription <QuerySnapshot> sdSubscription;
+  List<DocumentSnapshot> sdSnapshot;
   List<DocumentSnapshot> snapshot;
   CollectionReference collectionReference= Firestore.instance.collection("TopPost");
+  CollectionReference sdCollectionReference=Firestore.instance.collection("BodyPost");
   @override
   void initState() {
     // TODO: implement initState
@@ -20,7 +26,13 @@ class _HomeState extends State<Home> {
         snapshot=datasnapshot.documents;
       });
     });
+    sdSubscription=sdCollectionReference.snapshots().listen((sddataSnapshot){
+      sdSnapshot=sddataSnapshot.documents;
+    });
     super.initState();
+  }
+  passData(DocumentSnapshot snap){
+    Navigator.of(context).push(new MaterialPageRoute(builder: (context)=>DetailPage(snapshot: snap,)));
   }
   @override
   Widget build(BuildContext context) {
@@ -70,29 +82,93 @@ class _HomeState extends State<Home> {
       body:new ListView(
         children: <Widget>[
           new Container(
-            height:250,
+            height:200,
             child: new ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context,index){
               return Card(
                 elevation:10.0,
                 margin: EdgeInsets.all(10.0),
-                child: new Column(
+              child: new Container(
+//                padding: EdgeInsets.all(10.0),
+                  margin: EdgeInsets.all(10.0),
+                  child: new Column(
+                children: <Widget>[
+                  new ClipRRect(
+                      borderRadius: new BorderRadius.circular(15.0),
+                      child: new Image.network(snapshot[index].data["url"],
+                          height:120.0,
+                          width: 120.0,
+                          fit: BoxFit.cover
+                      )
+                  ),
+                  new SizedBox(height: 10.0,),
+                  new Text(snapshot[index].data["title"],
+                  style: TextStyle(fontSize: 19.0,color: Colors.pink),
+                  ),
+                ],
+              ))
+              );
+            },itemCount: snapshot.length),
+          ) ,//end of first container
+          new Container(
+            height:MediaQuery.of(context).size.height,// take the full height of the image
+            child: new ListView.builder(
+              itemBuilder: (context,index){
+                return Card(
+                  elevation:7.0,
+                  margin:EdgeInsets.all(10.0),
+                  child: new Column(
+                    children: <Widget>[
+                new Row(
+                  children: <Widget>[
+                    new CircleAvatar(
+                      child: new Text(sdSnapshot[index].data["title"][0]),
+                      backgroundColor: Colors.pink,
+                      foregroundColor: Colors.white,
+                    ),
+                   new  SizedBox(width: 10.0,),
+                new InkWell(
+                  child:new Text(sdSnapshot[index].data["title"],
+                      style: TextStyle(fontSize: 20.0,color:Colors.pink)),
+
+                onTap: (){
+                    passData(sdSnapshot[index]);
+                },
+                ),
+
+//                    new Text(sdSnapshot[index].data["title"])
+                  ],
+                ),
+
+                new Column(
                   children: <Widget>[
                     new ClipRRect(
-                    borderRadius: new BorderRadius.circular(10.0),
-                      child: new Image.network(snapshot[index].data["url"],
-                      height:180.0,
-                      width: 180.0,
+                      borderRadius: BorderRadius.circular(15.0),
+                      child: new Image.network(sdSnapshot[index].data["url"],
+                      height:150.0,
                       fit: BoxFit.cover
                       )
                     ),
-                    new SizedBox(height: 10.0,),
-                    new Text(snapshot[index].data["title"])
+            new SizedBox(height: 10.0,),
+            new Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                new Icon(Icons.thumb_up, color: Colors.deepPurple,),
+                new Icon(Icons.share, color: Colors.green,),
+                new Icon(Icons.thumb_up,color: Colors.yellowAccent,)
+
+              ],)
                   ],
                 )
-              );
-            },itemCount: snapshot.length),
+                    ],
+                  ),
+
+
+                );
+              },
+              itemCount: sdSnapshot.length,
+            )
           )
         ],
       )
